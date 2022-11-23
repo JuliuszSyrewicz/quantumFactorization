@@ -2,3 +2,4 @@ charts/
 qasm_files/
 *.txt
 txt/
+__pycache__/
