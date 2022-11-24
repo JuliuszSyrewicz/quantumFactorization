@@ -1,4 +1,5 @@
 charts/
+circuits/
 qasm_files/
 *.txt
 txt/
