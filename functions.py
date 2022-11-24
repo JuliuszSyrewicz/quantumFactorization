@@ -26,7 +26,7 @@ def swap_registers(circuit, n):
 
 def AFTerror(qc2, n, qft_probs, delta, backend="statevector", display_bool=False):
     # returns a correlation coefficient between the qft and aft signals
-    aft_probs = simulate(qc2, n, display_bool=display_bool, delta=delta, backend=backend)
+    aft_probs = simulateQFT(qc2, n, display_bool=display_bool, delta=delta, backend=backend)
     mae = np.abs(np.subtract(qft_probs, aft_probs)).mean()
     return mae
 
@@ -59,8 +59,8 @@ def QFT(circuit, n, delta=10000):
             else:
                 break
 
-def simulate(qc, n, reps=2**14, display_bool=False, delta=10000, backend="statevector",
-    noise = 0.01):
+def simulateQFT(qc, n, reps=2 ** 14, display_bool=False, delta=10000, backend="statevector",
+                noise = 0.01):
     # Create an empty noise model
     noise_model = NoiseModel()
 
@@ -114,7 +114,7 @@ def compareFTs(n_low, n_high, backend="statevector", display_bool=False):
         qcQFT = QuantumCircuit(n, n)
         qcQFT.h(n // 2)
         QFT(qcQFT, n)
-        qft_probs = simulate(qcQFT, n, display_bool=display_bool, backend=backend)
+        qft_probs = simulateQFT(qcQFT, n, display_bool=display_bool, backend=backend)
         start_time = time.time()
         deltas, errors = compareAFT(n, n, qft_probs, backend=backend, display_bool=display_bool)
         print("--- {:.3f}s seconds ---".format(time.time() - start_time))
