@@ -158,3 +158,4 @@ def plotErrorsFromFile(filepath):
     ax.set_xlabel("delta")
 
     plt.colorbar()
+
