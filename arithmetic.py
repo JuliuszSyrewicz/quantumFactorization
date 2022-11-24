@@ -1,4 +1,5 @@
-from qiskit import QuantumRegister, QuantumCircuit
+from qiskit import QuantumRegister, QuantumCircuit, ClassicalRegister
+
 
 def twoBitCarry():
     no_qubits = 4
@@ -50,56 +51,20 @@ def twoBitSum():
     qc.cnot(anc, b)
     return qc.to_instruction()
 
-def nBitAdder(n):
-    qr = QuantumRegister(3*n+1)
-    qc = QuantumCircuit(qr, name="{}-bit adder".format(n))
-    carry_bitlist = [0,1,2,3]
-    for i in range(n):
-        qc.append(twoBitCarry(), [qr[x + 3 * i] for x in carry_bitlist])
-    qc.cnot(qr[-3], qr[-2])
-
-    sum_bitlist = [-4, -3, -2]
-    rev_carry_bitlist = [-7, -6, -5, -4]
-
-    qc.append(twoBitSum(), [qr[x] for x in sum_bitlist])
-    for i in range(n-1):
-        qc.append(reverseTwoBitCarry(), [qr[x - 3 * i] for x in rev_carry_bitlist])
-        qc.append(twoBitSum(), [qr[x - 3 * i] for x in rev_carry_bitlist[:3]])
-
-    qc.draw(output="mpl", fold=-1, filename="circuits/{}-bitAdder.png".format(n))
-    # print(qc)
-    return qc.to_instruction()
-
-
-def nBitAdder(n):
-    """
-        -- register a of size n
-        -- b (sum) register of size n + 1
-        -- ancilla register of size n
-    """
-
-    reg_a = QuantumRegister(n)
-    reg_b = QuantumRegister(n+1)
-    reg_anc = QuantumRegister(n)
-
+def nBitAdder(n, reg_a, reg_b, reg_anc):
     qc = QuantumCircuit(reg_a, reg_b, reg_anc, name="{}-bit adder".format(n))
-
-
-    # qr = QuantumRegister(3 * n + 1)
-    # qc = QuantumCircuit(qr, name="{}-bit adder".format(n))
-    carry_bitlist = [0, 1, 2, 3]
     for i in range(n):
-        qc.append(twoBitCarry(), [qr[x + 3 * i] for x in carry_bitlist])
-    qc.cnot(qr[-3], qr[-2])
+        try:
+            qc.append(twoBitCarry(), [reg_anc[i], reg_a[i], reg_b[i], reg_anc[i + 1]])
+        except:
+            qc.append(twoBitCarry(), [reg_anc[i], reg_a[i], reg_b[i], reg_b[i + 1]])
 
-    sum_bitlist = [-4, -3, -2]
-    rev_carry_bitlist = [-7, -6, -5, -4]
+    qc.cnot(reg_a[-1], reg_b[-2])
 
-    qc.append(twoBitSum(), [qr[x] for x in sum_bitlist])
+    qc.append(twoBitSum(), [reg_anc[-1], reg_a[-1], reg_b[-2]])
+
     for i in range(n - 1):
-        qc.append(reverseTwoBitCarry(), [qr[x - 3 * i] for x in rev_carry_bitlist])
-        qc.append(twoBitSum(), [qr[x - 3 * i] for x in rev_carry_bitlist[:3]])
+        qc.append(reverseTwoBitCarry(), [reg_anc[-2 - i], reg_a[-2 - i], reg_b[-3 - i], reg_anc[-1 - i]])
+        qc.append(twoBitSum(), [reg_anc[-2 - i], reg_a[-2 - i], reg_b[-3 - i]])
 
-    qc.draw(output="mpl", fold=-1, filename="circuits/{}-bitAdder.png".format(n))
-    # print(qc)
     return qc.to_instruction()
