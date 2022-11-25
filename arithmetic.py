@@ -51,7 +51,7 @@ def twoBitSum():
     qc.cnot(anc, b)
     return qc.to_instruction()
 
-def nBitAdder(n, reg_a, reg_b, reg_anc):
+def nBitAdder(n, reg_a, reg_b, reg_anc, reverse=False):
     qc = QuantumCircuit(reg_a, reg_b, reg_anc, name="{}-bit adder".format(n))
     for i in range(n):
         try:
@@ -67,4 +67,5 @@ def nBitAdder(n, reg_a, reg_b, reg_anc):
         qc.append(reverseTwoBitCarry(), [reg_anc[-2 - i], reg_a[-2 - i], reg_b[-3 - i], reg_anc[-1 - i]])
         qc.append(twoBitSum(), [reg_anc[-2 - i], reg_a[-2 - i], reg_b[-3 - i]])
 
+    if reverse: qc = qc.inverse()
     return qc.to_instruction()
