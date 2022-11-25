@@ -71,7 +71,7 @@ def nBitAdder(n, reg_a, reg_b, reg_anc, reverse=False):
     return qc.to_instruction()
 
 def nbitModNAdder(n, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=False):
-    qc = QuantumCircuit(reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit)
+    qc = QuantumCircuit(reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, name="{}-bitModNadder, {}".format(n, "rev" if reverse else ""))
 
     qc.append(nBitAdder(n, reg_a, reg_b, reg_anc), reg_a[0:n] + reg_b[0:n + 1] + reg_anc[0:n])
     qc.append(nBitAdder(n, reg_N, reg_b, reg_anc, reverse=True), reg_N[0:n] + reg_b[0:n + 1] + reg_anc[0:n])
