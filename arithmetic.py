@@ -53,6 +53,9 @@ def twoBitSum():
 
 def nBitAdder(n, reg_a, reg_b, reg_anc, reverse=False):
     qc = QuantumCircuit(reg_a, reg_b, reg_anc, name="{}-bit adder, {}".format(n, "rev" if reverse else ""))
+
+    qc.barrier()
+
     for i in range(n):
         try:
             qc.append(twoBitCarry(), [reg_anc[i], reg_a[i], reg_b[i], reg_anc[i + 1]])
@@ -68,10 +71,15 @@ def nBitAdder(n, reg_a, reg_b, reg_anc, reverse=False):
         qc.append(twoBitSum(), [reg_anc[-2 - i], reg_a[-2 - i], reg_b[-3 - i]])
 
     if reverse: qc = qc.inverse()
+
+    qc.barrier()
+
     return qc.to_instruction()
 
 def nbitModNAdder(n, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=False):
-    qc = QuantumCircuit(reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, name="{}-bitModNadder, {}".format(n, "rev" if reverse else ""))
+    qc = QuantumCircuit(reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, name="{}-bitModNadder, {}".format(n, "^(-1)" if reverse else ""))
+
+    qc.barrier()
 
     qc.append(nBitAdder(n, reg_a, reg_b, reg_anc), reg_a[0:n] + reg_b[0:n + 1] + reg_anc[0:n])
 
@@ -111,7 +119,39 @@ def nbitModNAdder(n, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=False)
 
     qc.append(nBitAdder(n, reg_a, reg_b, reg_anc), reg_a[0:n] + reg_b[0:n + 1] + reg_anc[0:n])
 
+    if reverse: qc = qc.inverse()
+
     qc.barrier()
 
+    return qc.to_instruction()
+
+def nbitModNMultiplier(n, g, N, reg_c_qubit, reg_x, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=False):
+    qc = QuantumCircuit(reg_c_qubit, reg_x, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, name="{}-bitModMultiplier".format(n, "^(-1)" if reverse else ""))
+
+    qc.barrier()
+
+    for i in range(n):
+        a = 2**i * g
+
+        # convert a to binary mod N
+        bin_a_mod = bin(a % N)[2:].zfill(n)
+        print("a = {}, binMod = {}".format(a, bin_a_mod))
+
+        # perform a*2^i for each x_k = 1 in x
+        for j, bit in enumerate(bin_a_mod[::-1]):
+            qc.toffoli(reg_c_qubit[0], reg_x[i], reg_a[j]) if int(bit) else None
+        qc.append(nbitModNAdder(n, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit), reg_a[0:n] + reg_b[0:n + 1] + reg_anc[0:n] + reg_N[0:n] + reg_tmp_qubit[0:1])
+        for j, bit in enumerate(bin_a_mod):
+            qc.toffoli(reg_c_qubit[0], reg_x[i], reg_a[-j - 1]) if int(bit) else None
+
+    # add only with x if c == 0
+    qc.x(reg_c_qubit[0])
+    for i in range(n):
+        qc.toffoli(reg_c_qubit[0], reg_x[i], reg_b[i])
+    qc.x(reg_c_qubit[0])
+
     if reverse: qc = qc.inverse()
+
+    qc.barrier()
+
     return qc.to_instruction()
