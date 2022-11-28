@@ -55,6 +55,15 @@ def twoBitSum():
 
 
 def nBitAdder(n, reg_a, reg_b, reg_anc, reverse=False):
+    """
+    :param n: register size
+    :param reg_a: register holding one of the addends
+    :param reg_b: register holding one of the addends
+    :param reg_anc: register holding ancilla qubits
+    :param reverse: parameter specifying whether to reverse the circuit
+    :return:
+    """
+
     qc = QuantumCircuit(reg_a, reg_b, reg_anc, name="{}-bit adder, {}".format(n, "rev" if reverse else ""))
 
     qc.barrier()
@@ -81,6 +90,16 @@ def nBitAdder(n, reg_a, reg_b, reg_anc, reverse=False):
 
 
 def nbitModNAdder(n, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=False):
+    """
+     :param n: register size
+     :param reg_a: register holding one of the addends
+     :param reg_b: register holding one of the addends
+     :param reg_anc: register holding ancilla qubits
+     :param reg_N: register holding the divisor
+     :param reverse: parameter specifying whether to reverse the circuit
+     :return:
+     """
+
     qc = QuantumCircuit(reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit,
                         name="{}-bitModNadder, {}".format(n, "^(-1)" if reverse else ""))
 
@@ -151,12 +170,30 @@ def getBinList(a, n):
 
 
 def nbitModNMultiplier(n, g, N, reg_c_qubit, reg_x, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=False):
+    """
+        circuit for performing g*x mod N
+
+         :param n: register size
+         :param g: constant factor
+         :param N: divisor
+         :param reg_c_qubit: a qubit controlling whether to perform the operation
+         :param reg_x: register holding the variable factor
+         :param reg_a: register holding one of the addends
+         :param reg_b: register holding one of the addends
+         :param reg_anc: register holding ancilla qubits
+         :param reg_N: register holding the divisor
+         :param reg_tmp_qubit: qubit for controlling overflow
+         :param reverse: parameter specifying whether to reverse the circuit
+         :return:
+         """
+
     qc = QuantumCircuit(reg_c_qubit, reg_x, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit,
                         name="({}x_mod_{}){}".format(g, N, "^(-1)" if reverse else ""))
 
     qc.barrier()
 
     for i in range(n):
+        # keep adding exponents of 2 times g
         a = 2 ** i * g
 
         # convert a to binary mod N
@@ -177,6 +214,7 @@ def nbitModNMultiplier(n, g, N, reg_c_qubit, reg_x, reg_a, reg_b, reg_anc, reg_N
         qc.toffoli(reg_c_qubit[0], reg_x[i], reg_b[i])
     qc.x(reg_c_qubit[0])
 
+    # reverse the circuit to get the inverse of the unitary
     if reverse: qc = qc.inverse()
 
     qc.barrier()
