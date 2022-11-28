@@ -74,12 +74,20 @@ def nbitModNAdder(n, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=False)
     qc = QuantumCircuit(reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, name="{}-bitModNadder, {}".format(n, "rev" if reverse else ""))
 
     qc.append(nBitAdder(n, reg_a, reg_b, reg_anc), reg_a[0:n] + reg_b[0:n + 1] + reg_anc[0:n])
-    qc.append(nBitAdder(n, reg_N, reg_b, reg_anc, reverse=True), reg_N[0:n] + reg_b[0:n + 1] + reg_anc[0:n])
+
+    for i in range(n):
+        qc.swap(reg_a[i], reg_N[i])
+
+    qc.append(nBitAdder(n, reg_a, reg_b, reg_anc, reverse=True), reg_a[0:n] + reg_b[0:n + 1] + reg_anc[0:n])
+
+    qc.barrier()
 
     # anti control
     qc.x(reg_b[-1])
     qc.cnot(reg_b[-1], reg_tmp_qubit[0])
     qc.x(reg_b[-1])
+
+    qc.barrier()
 
     # overflow control
     for i in range(n):
@@ -91,12 +99,19 @@ def nbitModNAdder(n, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=False)
     for i in range(n):
         qc.cnot(reg_tmp_qubit[0], reg_a[i])
 
-    qc.append(nBitAdder(n, reg_N, reg_b, reg_anc, reverse=True), reg_N[0:n] + reg_b[0:n + 1] + reg_anc[0:n])
+    qc.barrier()
+
+    for i in range(n):
+        qc.swap(reg_a[i], reg_N[i])
+
+    qc.append(nBitAdder(n, reg_a, reg_b, reg_anc, reverse=True), reg_a[0:n] + reg_b[0:n + 1] + reg_anc[0:n])
 
     # flip tmp bit to 0 if overflow occurred
     qc.cnot(reg_b[-1], reg_tmp_qubit[0])
 
     qc.append(nBitAdder(n, reg_a, reg_b, reg_anc), reg_a[0:n] + reg_b[0:n + 1] + reg_anc[0:n])
+
+    qc.barrier()
 
     if reverse: qc = qc.inverse()
     return qc.to_instruction()
