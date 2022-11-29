@@ -1,5 +1,6 @@
 from qiskit import QuantumRegister, QuantumCircuit, ClassicalRegister
 import numpy as np
+import sys
 
 def twoBitCarry():
     no_qubits = 4
@@ -258,6 +259,40 @@ def nbitModExponentiation(n, g, N, reg_exp, reg_c_qubit, reg_x, reg_a, reg_b, re
             qc.swap(reg_x[j], reg_b[j])
         qc.append(nbitModNMultiplier(n, g, N, reg_c_qubit, reg_x, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=True), reg_c_qubit[0:1] + reg_x[0:n] + reg_a[0:n] + reg_b[0:n + 1] + reg_anc[0:n] + reg_N[0:n] + reg_tmp_qubit[0:1])
         qc.cnot(reg_exp[i], reg_c_qubit[0])
+
+    qc.barrier()
+
+    return qc.to_instruction()
+
+def nbitQFT(n, reg, delta = sys.maxsize):
+    """
+    :param n: circuit width
+    :param reg: register to add the circuit to
+    :return:
+    """
+
+    name = "{}-bitQFT".format(n)
+    qc = QuantumCircuit(reg, name=name)
+
+    for i in range(n // 2):
+        qc.swap(reg[i], reg[n-i-1])
+
+    qc.barrier()
+
+    for i in range(n):
+        qc.h(reg[i])
+        for j in range(1, n-i):
+            if j < delta:
+                theta = np.pi / 2 ** j
+                control = i+j
+                target = i
+                qc.p(theta/2, reg[control])
+                qc.p(theta/2, reg[target])
+                qc.cnot(reg[control], reg[target])
+                qc.p(-theta/2, reg[target])
+                qc.cnot(reg[control], reg[target])
+            else:
+                break
 
     qc.barrier()
 
