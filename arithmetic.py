@@ -143,14 +143,14 @@ def nbitModNAdder(n, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=False)
 
     qc.append(nBitAdder(n, reg_a, reg_b, reg_anc), reg_a[0:n] + reg_b[0:n + 1] + reg_anc[0:n])
 
-    if reverse: qc = qc.inverse()
-
     qc.barrier()
+
+    if reverse: qc = qc.inverse()
 
     return qc.to_instruction()
 
 
-def getBinModN(a, n, N=1):
+def getBinModN(a, n, N):
     """
     :param a: input integer
     :param n: number of bits to stretch the output to
@@ -160,13 +160,14 @@ def getBinModN(a, n, N=1):
     return bin(a % N)[2:].zfill(n)
 
 
-def getBinList(a, n):
+def getBinListModN(a, n, N=1):
     """
     :param a: input number
     :param n: number of bits to stretch the output to
-    :return: reversed list of 0s and 1s corresponding to the binary form of input a (starts from least significant bit)
+    :param N: number to take modulus on
+    :return: reversed list of 0s and 1s corresponding to the binary form of input a (starts from the least significant bit)
     """
-    return list(map(int, getBinModN(a, n)))[::-1]
+    return list(map(int, getBinModN(a, n, N)))[::-1]
 
 
 def nbitModNMultiplier(n, g, N, reg_c_qubit, reg_x, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=False):
@@ -187,8 +188,12 @@ def nbitModNMultiplier(n, g, N, reg_c_qubit, reg_x, reg_a, reg_b, reg_anc, reg_N
          :return:
          """
 
-    qc = QuantumCircuit(reg_c_qubit, reg_x, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit,
-                        name="({}x_mod_{}){}".format(g, N, "^(-1)" if reverse else ""))
+    # set g to its multiplicative inverse if gate is reversed
+    if reverse: g = pow(g, -1, N)
+
+    name = "({}x_mod_{}){}".format(g, N, "^(-1)" if reverse else "")
+
+    qc = QuantumCircuit(reg_c_qubit, reg_x, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, name=name)
 
     qc.barrier()
 
@@ -214,9 +219,8 @@ def nbitModNMultiplier(n, g, N, reg_c_qubit, reg_x, reg_a, reg_b, reg_anc, reg_N
         qc.toffoli(reg_c_qubit[0], reg_x[i], reg_b[i])
     qc.x(reg_c_qubit[0])
 
-    # reverse the circuit to get the inverse of the unitary
-    if reverse: qc = qc.inverse()
-
     qc.barrier()
+
+    if reverse: qc = qc.inverse()
 
     return qc.to_instruction()
