@@ -151,13 +151,16 @@ def nbitModNAdder(n, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=False)
     return qc.to_instruction()
 
 
-def getBinModN(a, n, N):
+def getBinModN(a, n, N=sys.maxsize):
     """
     :param a: input integer
     :param n: number of bits to stretch the output to
     :param N: number to take modulus on
     :return: return a string holding the converted a
     """
+
+    output = bin(a % N)[2:].zfill(n)
+    assert len(output) == n
     return bin(a % N)[2:].zfill(n)
 
 

@@ -159,3 +159,42 @@ def plotErrorsFromFile(filepath):
 
     plt.colorbar()
 
+
+def genBinStrings(n):
+    binstrings = []
+
+    def genBin(n, bs=''):
+        if len(bs) == n:
+            binstrings.append(bs)
+        else:
+            genBin(n, bs + '0')
+            genBin(n, bs + '1')
+
+    genBin(n)
+    return binstrings
+
+def plotShor(no_qubits, len_exp, counts, g, N):
+
+    # for key in counts:
+    #     b_reg = key[(-len_exp-1):(-1)]
+        # print("b_reg = {}, int = {}".format(b_reg, int(b_reg, 2)))
+
+    for binstring in genBinStrings(len_exp):
+        padded = '0' * (no_qubits - len_exp) + binstring
+        print(padded)
+        counts[padded] = counts.get(padded, 0)
+
+    int_counts = {}
+    for count in counts:
+        int_counts[(int(count, 2))] = counts[count]
+
+    xs = [x for x in range(len(int_counts))]
+    results = []
+    for i in range(len(int_counts)):
+        results.append(int_counts[i])
+
+    plt.bar(xs, results, color="#c888e3")
+    plt.title("{}^x mod {}".format(g, N))
+    filename = "charts/factored{}".format(N)
+    plt.show()
+    plt.savefig(filename)
