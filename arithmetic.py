@@ -1,5 +1,5 @@
 from qiskit import QuantumRegister, QuantumCircuit, ClassicalRegister
-
+import numpy as np
 
 def twoBitCarry():
     no_qubits = 4
@@ -160,14 +160,15 @@ def getBinModN(a, n, N):
     return bin(a % N)[2:].zfill(n)
 
 
-def getBinListModN(a, n, N=1):
+# not working as intended
+def getBinListModN(a, n, N):
     """
     :param a: input number
     :param n: number of bits to stretch the output to
     :param N: number to take modulus on
     :return: reversed list of 0s and 1s corresponding to the binary form of input a (starts from the least significant bit)
     """
-    return list(map(int, getBinModN(a, n, N)))[::-1]
+    return [a*b for a,b in zip(list(map(int, getBinModN(a, n, N))), list(np.arange(2**n)))]
 
 
 def nbitModNMultiplier(n, g, N, reg_c_qubit, reg_x, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=False):
@@ -222,5 +223,42 @@ def nbitModNMultiplier(n, g, N, reg_c_qubit, reg_x, reg_a, reg_b, reg_anc, reg_N
     qc.barrier()
 
     if reverse: qc = qc.inverse()
+
+    return qc.to_instruction()
+
+def nbitModExponentiation(n, g, N, reg_exp, reg_c_qubit, reg_x, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit):
+    """
+        circuit for performing g^x mod N
+
+         :param n: register size
+         :param g: constant factor
+         :param N: divisor
+         :param reg_exp: register holding the exponent
+         :param reg_c_qubit: a qubit controlling whether to perform the operation
+         :param reg_x: register holding the variable factor
+         :param reg_a: register holding one of the addends
+         :param reg_b: register holding one of the addends
+         :param reg_anc: register holding ancilla qubits
+         :param reg_N: register holding the divisor
+         :param reg_tmp_qubit: qubit for controlling overflow
+         :param reverse: parameter specifying whether to reverse the circuit
+         :return:
+    """
+
+    name = "{}^x_mod_{}".format(g, N)
+    qc = QuantumCircuit(reg_exp, reg_c_qubit, reg_x, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, name=name)
+
+    for i in range(n):
+        qc.barrier()
+        # every succesive gate should perform the multiplication with respect to the remainders of higher powers mo
+        g = g ** (2 ** i) % N
+        qc.cnot(reg_exp[i], reg_c_qubit[0])
+        qc.append(nbitModNMultiplier(n, g, N, reg_c_qubit, reg_x, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit), reg_c_qubit[0:1] + reg_x[0:n] + reg_a[0:n] + reg_b[0:n + 1] + reg_anc[0:n] + reg_N[0:n] + reg_tmp_qubit[0:1])
+        for j in range(n):
+            qc.swap(reg_x[j], reg_b[j])
+        qc.append(nbitModNMultiplier(n, g, N, reg_c_qubit, reg_x, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=True), reg_c_qubit[0:1] + reg_x[0:n] + reg_a[0:n] + reg_b[0:n + 1] + reg_anc[0:n] + reg_N[0:n] + reg_tmp_qubit[0:1])
+        qc.cnot(reg_exp[i], reg_c_qubit[0])
+
+    qc.barrier()
 
     return qc.to_instruction()
