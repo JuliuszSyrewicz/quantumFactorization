@@ -397,3 +397,41 @@ def nbitClassCtrlFourierAdder(n, A, reg_control, reg_phi, delta=sys.maxsize):
     qc.append(nbitQFT(n, reg_phi, delta=delta, reversed=True), reg_phi[0:n])
 
     return qc.to_instruction()
+
+def nbitAdditionTransformLegacy(n, A, reg_phi, delta=sys.maxsize):
+    """
+    :param n: register width
+    :param reg_b: register holding one of the addends
+    :param reg_phi: register holding one of the addends
+    :return: circuit corresponding to the su
+    """
+
+    binA = bin(A)[2:]
+    if len(binA) > n: raise Exception("A = {} is too large to fit in the register of size {}".format(A, n))
+
+    # stretch binA's length to match n
+    binA = binA.zfill(n)
+
+    print("binA = {}".format(binA))
+
+    name = "{}-bitAddFourier".format(n)
+    qc = QuantumCircuit(reg_phi, name=name)
+
+    qc.append(nbitQFT(n, reg_phi, delta=delta, reversed=False), reg_phi[0:n])
+
+    qc.barrier()
+
+    for i in range(n):
+        for j in range(n-i):
+            print("int(binA[{}]) = {}".format(i, int(binA[i])))
+            if int(binA[n - i - j - 1]):
+                theta = np.pi/2**j
+                qc.p(theta, reg_phi[i])
+                # qc.append(CRn(np.pi/2**j), [reg_b[-i+n-j-1], reg_phi[-i+n-1]])
+                qc.barrier()
+
+    qc.barrier()
+
+    qc.append(nbitQFT(n, reg_phi, reversed=True), reg_phi[0:n])
+
+    return qc.to_instruction()
