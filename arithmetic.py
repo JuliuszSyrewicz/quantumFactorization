@@ -2,6 +2,22 @@ from qiskit import QuantumRegister, QuantumCircuit, ClassicalRegister
 import numpy as np
 import sys
 
+def CRn(theta):
+    qr = QuantumRegister(2)
+    qc = QuantumCircuit(qr, name="CRn({})".format(theta))
+    """
+        -- control
+        -- target
+    """
+    control, target = [qr[i] for i in range(2)]
+    qc.p(theta/2, control)
+    qc.p(theta/2, target)
+    qc.cnot(control, target)
+    qc.p(-theta/2, target)
+    qc.cnot(control, target)
+    return qc.to_instruction()
+
+
 def twoBitCarry():
     no_qubits = 4
     qr = QuantumRegister(no_qubits)
@@ -85,7 +101,7 @@ def nBitAdder(n, reg_a, reg_b, reg_anc, reverse=False):
 
     if reverse: qc = qc.inverse()
 
-    qc.barrier()
+    # qc.barrier()
 
     return qc.to_instruction()
 
@@ -267,14 +283,16 @@ def nbitModExponentiation(n, g, N, reg_exp, reg_c_qubit, reg_x, reg_a, reg_b, re
 
     return qc.to_instruction()
 
-def nbitQFT(n, reg, delta = sys.maxsize):
+def nbitQFT(n, reg, delta = sys.maxsize, reversed=False):
     """
     :param n: circuit width
     :param reg: register to add the circuit to
+    :param delta: cutoff point for logarithm of available phase shift precision
+    :param reversed: change theta to -theta to get the inverse Fourier transform
     :return:
     """
 
-    name = "{}-bitQFT".format(n)
+    name = "{}-bitQFT{}".format(n, "^(-1)" if reversed else "")
     qc = QuantumCircuit(reg, name=name)
 
     for i in range(n // 2):
@@ -287,6 +305,7 @@ def nbitQFT(n, reg, delta = sys.maxsize):
         for j in range(1, n-i):
             if j < delta:
                 theta = np.pi / 2 ** j
+                if reversed: theta = -theta
                 control = i+j
                 target = i
                 qc.p(theta/2, reg[control])
