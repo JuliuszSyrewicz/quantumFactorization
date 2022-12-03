@@ -285,7 +285,7 @@ def nbitModExponentiation(n, g, N, reg_exp, reg_c_qubit, reg_x, reg_a, reg_b, re
 
 def nbitQFT(n, reg, delta = sys.maxsize, reversed=False):
     """
-    :param n: circuit width
+    :param n: register width
     :param reg: register to add the circuit to
     :param delta: cutoff point for logarithm of available phase shift precision
     :param reversed: change theta to -theta to get the inverse Fourier transform
@@ -294,6 +294,11 @@ def nbitQFT(n, reg, delta = sys.maxsize, reversed=False):
 
     name = "{}-bitQFT{}".format(n, "^(-1)" if reversed else "")
     qc = QuantumCircuit(reg, name=name)
+
+    qc.barrier()
+
+    for i in range(n // 2):
+        qc.swap(reg[i], reg[n - i - 1])
 
     qc.barrier()
 
@@ -316,9 +321,31 @@ def nbitQFT(n, reg, delta = sys.maxsize, reversed=False):
 
     qc.barrier()
 
-    for i in range(n // 2):
-        qc.swap(reg[i], reg[n-i-1])
+    return qc.to_instruction()
+
+def nbitAdditionTransform(n, reg_b, reg_phi):
+    """
+    :param n: register width
+    :param reg_b: register holding one of the addends
+    :param reg_phi: register holding one of the addends
+    :return: circuit corresponding to the su
+    """
+    name = "{}-bitAddFourier".format(n)
+    qc = QuantumCircuit(reg_b, reg_phi, name=name)
+
+    qc.append(nbitQFT(n, reg_phi), reg_phi[0:n])
 
     qc.barrier()
+
+    for i in range(n):
+        for j in range(n-i):
+            theta = np.pi/2**j
+            qc.cp(theta, reg_b[-i+n-j-1], reg_phi[i])
+            # qc.append(CRn(np.pi/2**j), [reg_b[-i+n-j-1], reg_phi[-i+n-1]])
+            qc.barrier()
+
+    qc.barrier()
+
+    qc.append(nbitQFT(n, reg_phi, reversed=True), reg_phi[0:n])
 
     return qc.to_instruction()
