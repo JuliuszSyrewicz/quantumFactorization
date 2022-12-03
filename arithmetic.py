@@ -1,6 +1,7 @@
 from qiskit import QuantumRegister, QuantumCircuit, ClassicalRegister
 import numpy as np
 import sys
+from qiskit.circuit.library.standard_gates import PhaseGate
 
 def CRn(theta):
     qr = QuantumRegister(2)
@@ -323,29 +324,36 @@ def nbitQFT(n, reg, delta = sys.maxsize, reversed=False):
 
     return qc.to_instruction()
 
-def nbitAdditionTransform(n, reg_b, reg_phi):
+def nbitCtrlAdditionTransform(n, reg_control, reg_b, reg_phi, delta=sys.maxsize):
     """
     :param n: register width
     :param reg_b: register holding one of the addends
     :param reg_phi: register holding one of the addends
+    :param reg_control: register holding control qubits for the addition
     :return: circuit corresponding to the su
     """
     name = "{}-bitAddFourier".format(n)
-    qc = QuantumCircuit(reg_b, reg_phi, name=name)
+    qc = QuantumCircuit(reg_control, reg_b, reg_phi, name=name)
 
-    qc.append(nbitQFT(n, reg_phi), reg_phi[0:n])
+    qc.append(nbitQFT(n, reg_phi, reversed=True), reg_phi[0:n])
 
     qc.barrier()
 
     for i in range(n):
         for j in range(n-i):
-            theta = np.pi/2**j
-            qc.cp(theta, reg_b[-i+n-j-1], reg_phi[i])
+            if j < delta:
+                theta = np.pi/2**j
+                c3p_gate = PhaseGate(theta).control(3)
+                qc.append(c3p_gate, [reg_control[0], reg_control[1], reg_b[-i+n-j-1], reg_phi[i]])
+
+
+                # qc.append(c3p_gate, reg_control([i for i in range(reg_control.width)]))
+                # qc.cp(theta, reg_b[-i+n-j-1], reg_phi[i])
             # qc.append(CRn(np.pi/2**j), [reg_b[-i+n-j-1], reg_phi[-i+n-1]])
+            else:
+                break
             qc.barrier()
 
-    qc.barrier()
-
-    qc.append(nbitQFT(n, reg_phi, reversed=True), reg_phi[0:n])
+    qc.append(nbitQFT(n, reg_phi, reversed=False), reg_phi[0:n])
 
     return qc.to_instruction()
