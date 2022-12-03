@@ -335,25 +335,65 @@ def nbitCtrlAdditionTransform(n, reg_control, reg_b, reg_phi, delta=sys.maxsize)
     name = "{}-bitAddFourier".format(n)
     qc = QuantumCircuit(reg_control, reg_b, reg_phi, name=name)
 
-    qc.append(nbitQFT(n, reg_phi, reversed=True), reg_phi[0:n])
+    qc.append(nbitQFT(n, reg_phi, reversed=True, delta=delta), reg_phi[0:n])
 
     qc.barrier()
 
     for i in range(n):
         for j in range(n-i):
-            if j < delta:
-                theta = np.pi/2**j
-                c3p_gate = PhaseGate(theta).control(3)
-                qc.append(c3p_gate, [reg_control[0], reg_control[1], reg_b[-i+n-j-1], reg_phi[i]])
+            theta = np.pi/2**j
+            c3p_gate = PhaseGate(theta).control(3)
+            qc.append(c3p_gate, [reg_control[0], reg_control[1], reg_b[-i+n-j-1], reg_phi[i]])
 
 
                 # qc.append(c3p_gate, reg_control([i for i in range(reg_control.width)]))
                 # qc.cp(theta, reg_b[-i+n-j-1], reg_phi[i])
             # qc.append(CRn(np.pi/2**j), [reg_b[-i+n-j-1], reg_phi[-i+n-1]])
+            qc.barrier()
+
+    qc.append(nbitQFT(n, reg_phi, reversed=False, delta=delta), reg_phi[0:n])
+
+    return qc.to_instruction()
+
+def nbitClassCtrlFourierAdder(n, A, reg_control, reg_phi, delta=sys.maxsize):
+    """
+    :param n: register width
+    :param A: classical value to be added to phi
+    :param reg_control: control register for the operation
+    :param reg_phi: quantum register holding one of the addends
+    :param delta: precision variable for the Fourier Transform
+    :return:
+    """
+
+    binA = bin(A)[2:]
+
+    if len(binA) > n: raise Exception("A = {} is too large to fit in the register of size {}".format(A, n))
+
+    # stretch binA's length to match n
+    binA = binA.zfill(n)
+
+    print("binA = {}".format(binA))
+
+    name = "{}-bitAddFourier".format(n)
+
+    qc = QuantumCircuit(reg_control, reg_phi, name=name)
+
+    qc.append(nbitQFT(n, reg_phi, delta=delta, reversed=False), reg_phi[0:n])
+
+    qc.barrier()
+
+    for i in range(n):
+        for j in range(n-i):
+            print("int(binA[{}]) = {}".format(i, int(binA[i])))
+            if int(binA[n-i-j-1]):
+                theta = np.pi/2**j
+                c3p_gate = PhaseGate(theta).control(2)
+                qc.append(c3p_gate, [reg_control[0], reg_control[1], reg_phi[i]])
+
             else:
                 break
             qc.barrier()
 
-    qc.append(nbitQFT(n, reg_phi, reversed=False), reg_phi[0:n])
+    qc.append(nbitQFT(n, reg_phi, delta=delta, reversed=True), reg_phi[0:n])
 
     return qc.to_instruction()
