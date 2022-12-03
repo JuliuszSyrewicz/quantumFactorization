@@ -295,9 +295,6 @@ def nbitQFT(n, reg, delta = sys.maxsize, reversed=False):
     name = "{}-bitQFT{}".format(n, "^(-1)" if reversed else "")
     qc = QuantumCircuit(reg, name=name)
 
-    for i in range(n // 2):
-        qc.swap(reg[i], reg[n-i-1])
-
     qc.barrier()
 
     for i in range(n):
@@ -308,13 +305,19 @@ def nbitQFT(n, reg, delta = sys.maxsize, reversed=False):
                 if reversed: theta = -theta
                 control = i+j
                 target = i
-                qc.p(theta/2, reg[control])
-                qc.p(theta/2, reg[target])
-                qc.cnot(reg[control], reg[target])
-                qc.p(-theta/2, reg[target])
-                qc.cnot(reg[control], reg[target])
+                qc.cp(theta, control, target)
+                # qc.p(theta/2, reg[control])
+                # qc.p(theta/2, reg[target])
+                # qc.cnot(reg[control], reg[target])
+                # qc.p(-theta/2, reg[target])
+                # qc.cnot(reg[control], reg[target])
             else:
                 break
+
+    qc.barrier()
+
+    for i in range(n // 2):
+        qc.swap(reg[i], reg[n-i-1])
 
     qc.barrier()
 
