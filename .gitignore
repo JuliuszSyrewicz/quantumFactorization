@@ -1,7 +1,6 @@
 charts/
 circuits/
 qasm_files/
-*.txt
 txt/
 __pycache__/
 .idea
