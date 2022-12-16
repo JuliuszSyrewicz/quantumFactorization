@@ -4,3 +4,9 @@ qasm_files/
 *.txt
 txt/
 __pycache__/
+.idea
+.idea/
+/.idea/
+/.idea/inspectionProfiles/
+*.xml
+*.iml
