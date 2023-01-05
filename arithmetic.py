@@ -108,9 +108,10 @@ def nBitAdder(n, reg_a, reg_b, reg_anc, reverse=False):
 
     return qc.to_instruction()
 
-def nbitModNAdder(n, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=False):
+def nbitModNAdder(n, N, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=False):
     """
      :param n: register size
+     :param N: modulus
      :param reg_a: register holding one of the addends
      :param reg_b: register holding one of the addends
      :param reg_anc: register holding ancilla qubits
@@ -141,13 +142,13 @@ def nbitModNAdder(n, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=False)
     qc.barrier()
 
     # overflow control
-    for i in range(n):
+    for i in functions.getOneIndices(N):
         qc.cnot(reg_tmp_qubit[0], reg_a[i])
 
     qc.append(nBitAdder(n, reg_a, reg_b, reg_anc), reg_a[0:n] + reg_b[0:n + 1] + reg_anc[0:n])
 
     # reverse overflow control
-    for i in range(n):
+    for i in functions.getOneIndices(N):
         qc.cnot(reg_tmp_qubit[0], reg_a[i])
 
     qc.barrier()

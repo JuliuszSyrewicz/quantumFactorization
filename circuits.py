@@ -56,7 +56,7 @@ def modNAdderCircuit(a, b, N, reverse=False):
     reg_anc = QuantumRegister(n, name="anc")
     reg_N = QuantumRegister(n, name="modN")
     reg_tmp_qubit = QuantumRegister(1, name="tmp_qubit")
-    cr = ClassicalRegister(n + 1, name="output")
+    cr = ClassicalRegister(n, name="output")
 
     # create circuit
     qc = QuantumCircuit(reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, cr)
@@ -75,7 +75,7 @@ def modNAdderCircuit(a, b, N, reverse=False):
     except CircuitError:
         pass
 
-    qc.append(arithmetic.nbitModNAdder(n, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=reverse),
+    qc.append(arithmetic.nbitModNAdder(n, N, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=reverse),
               reg_a[:] + reg_b[:] + reg_anc[:] + reg_N[:] + reg_tmp_qubit[:])
 
     # revert N to zeros
@@ -85,6 +85,6 @@ def modNAdderCircuit(a, b, N, reverse=False):
         pass
 
     qc.barrier()
-    qc.measure(reg_b, cr)
+    qc.measure(reg_b[:n], cr)
 
     return qc
