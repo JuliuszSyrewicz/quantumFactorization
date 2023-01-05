@@ -45,11 +45,10 @@ class TestFunctions(unittest.TestCase):
             self.assertEqual(counts, b - a)
 
     def testModAdd(self):
-        for i in range(5):
+        for i in range(20):
             a = np.random.randint(0, 63)
             b = np.random.randint(0, 63)
-            # N = np.random.randint(0, 63)
-            N = 63
+            N = np.random.randint(min(a, b) + 1, 63)
             qc = circuits.modNAdderCircuit(a, b, N)
 
             counts = testCircuit(qc)
