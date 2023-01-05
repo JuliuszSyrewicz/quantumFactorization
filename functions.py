@@ -10,6 +10,7 @@ from qiskit_aer.noise import NoiseModel, depolarizing_error
 import time
 from qiskit import QuantumCircuit
 from numpy import genfromtxt
+from bitstring import Bits
 
 
 def ZeroAncCRn(circuit, control, target, theta):
@@ -174,11 +175,11 @@ def getOneIndices(n):
     return indices
 
 # convert output dict's keys to integer and print out
-def convertKeys(dict):
+def convertKeys(dict, reverse=False):
     # convert each key to integer
-    dict = {int(k, 2): v for k, v in dict.items()}
+    output = {int(k, 2): v for k, v in dict.items()}
 
-    return dict
+    return output
 
 def squashDict(dict):
     assert(len(dict)) == 1
