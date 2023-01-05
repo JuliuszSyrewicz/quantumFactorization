@@ -1,6 +1,8 @@
 from qiskit import QuantumRegister, QuantumCircuit, ClassicalRegister
 import numpy as np
-import sys
+import sys, functions
+
+from qiskit.circuit.exceptions import CircuitError
 from qiskit.circuit.library.standard_gates import PhaseGate
 
 def CRn(theta):
@@ -106,6 +108,41 @@ def nBitAdder(n, reg_a, reg_b, reg_anc, reverse=False):
 
     return qc.to_instruction()
 
+def adderCircuit(a, b, reverse=False):
+    """
+    :param a: first addend
+    :param b: second addend
+    :return: quantum circuit for the addition of a and b
+    """
+
+    n = len(bin(max(a, b))[2:])
+    # create registers
+    reg_a = QuantumRegister(n, name="a")
+    reg_b = QuantumRegister(n + 1, name="b")
+    reg_anc = QuantumRegister(n, name="ancilla")
+    reg_control = QuantumRegister(2, name="control")
+    cr = ClassicalRegister(n + 1, name="c")
+
+    # create circuit
+    qc = QuantumCircuit(reg_a, reg_b, reg_anc, reg_control, cr, name="{}-bit adder".format(n))
+
+    # handle cases where a or b is 0 with a try except block
+    try:
+        qc.x(reg_a[i] for i in functions.getOneIndices(a))
+    except CircuitError:
+        pass
+    try:
+        qc.x(reg_b[i] for i in functions.getOneIndices(b))
+    except CircuitError:
+        pass
+
+    # adder
+    qc.append(nBitAdder(n, reg_a, reg_b, reg_anc, reverse=reverse), reg_a[:] + reg_b[:] + reg_anc[:])
+
+    qc.barrier()
+    qc.measure(reg_b, cr)
+
+    return qc
 
 def nbitModNAdder(n, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=False):
     """
@@ -166,7 +203,6 @@ def nbitModNAdder(n, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=False)
     if reverse: qc = qc.inverse()
 
     return qc.to_instruction()
-
 
 def getBinModN(a, n, N=sys.maxsize):
     """

@@ -173,13 +173,17 @@ def getOneIndices(n):
 
     return indices
 
-def analyzeOutput(outputs):
+# convert output dict's keys to integer and print out
+def convertKeys(dict):
     # convert each key to integer
-    outputs = {int(k, 2): v for k, v in outputs.items()}
+    dict = {int(k, 2): v for k, v in dict.items()}
 
-    total_outputs = sum(outputs.values())
-    for outcome, count in outputs.items():
-        print("{}: {}%".format(outcome, count / total_outputs * 100))
+    return dict
+
+def squashDict(dict):
+    assert(len(dict)) == 1
+    outcome = list(dict.keys())[0]
+    return outcome
 
 def genBinStrings(n):
     binstrings = []
