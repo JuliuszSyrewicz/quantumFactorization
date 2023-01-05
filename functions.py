@@ -173,6 +173,14 @@ def getOneIndices(n):
 
     return indices
 
+def analyzeOutput(outputs):
+    # convert each key to integer
+    outputs = {int(k, 2): v for k, v in outputs.items()}
+
+    total_outputs = sum(outputs.values())
+    for outcome, count in outputs.items():
+        print("{}: {}%".format(outcome, count / total_outputs * 100))
+
 def genBinStrings(n):
     binstrings = []
 
