@@ -178,7 +178,7 @@ def getBinModN(a, n, N=sys.maxsize):
 
     output = bin(a % N)[2:].zfill(n)
     assert len(output) == n
-    return bin(a % N)[2:].zfill(n)
+    return output
 
 
 # not working as intended

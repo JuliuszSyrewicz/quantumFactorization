@@ -159,6 +159,19 @@ def plotErrorsFromFile(filepath):
 
     plt.colorbar()
 
+def getOneIndices(n):
+    # convert integer to binary string
+    binary_str = bin(n)[2:][::-1]
+
+    # initialize empty list to store indices
+    indices = []
+
+    # iterate through the binary string and get the indices where the string is equal to 1
+    for i in range(len(binary_str)):
+        if binary_str[i] == '1':
+            indices.append(i)
+
+    return indices
 
 def genBinStrings(n):
     binstrings = []
