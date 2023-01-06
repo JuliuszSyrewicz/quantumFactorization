@@ -231,7 +231,7 @@ def nbitModNMultiplier(n, g, N, reg_c_qubit, reg_x, reg_a, reg_b, reg_anc, reg_N
         # perform a*2^i for each x_k = 1 in x
         for j, bit in enumerate(bin_a_mod[::-1]):
             qc.toffoli(reg_c_qubit[0], reg_x[i], reg_a[j]) if int(bit) else None
-        qc.append(nbitModNAdder(n, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit),
+        qc.append(nbitModNAdder(n, N, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit),
                   reg_a[0:n] + reg_b[0:n + 1] + reg_anc[0:n] + reg_N[0:n] + reg_tmp_qubit[0:1])
         for j, bit in enumerate(bin_a_mod):
             qc.toffoli(reg_c_qubit[0], reg_x[i], reg_a[-j - 1]) if int(bit) else None
