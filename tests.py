@@ -46,9 +46,10 @@ class TestFunctions(unittest.TestCase):
 
     def testModAdd(self):
         for i in range(20):
-            a = np.random.randint(0, 63)
-            b = np.random.randint(0, 63)
-            N = np.random.randint(min(a, b) + 1, 63)
+            a = np.random.randint(0, 62)
+            b = np.random.randint(0, 62)
+
+            N = np.random.randint(max(a, b) + 1, 63)
             qc = circuits.modNAdderCircuit(a, b, N)
 
             counts = testCircuit(qc)
@@ -57,3 +58,18 @@ class TestFunctions(unittest.TestCase):
             if type(counts) != int:
                 self.fail("Mod adder circuit output gives multiple results")
             self.assertEqual(counts, (a + b) % N)
+
+    def testModMultiplier(self):
+        for i in range(20):
+            a = np.random.randint(0, 30)
+            b = np.random.randint(0, 30)
+
+            N = np.random.randint(max(a, b) + 1, 31)
+            qc = circuits.modNMultiplierCircuit(a, b, N)
+
+            counts = testCircuit(qc)
+            print("a = {}, b = {}, N = {}, (a*b) % N = {}, counts = {}".format(a, b, N, (a*b)%N, counts))
+
+            if type(counts) != int:
+                self.fail("Mod multiplier circuit output gives multiple results")
+            self.assertEqual(counts, (a * b) % N)
