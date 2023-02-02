@@ -10,8 +10,7 @@ from qiskit_aer.noise import NoiseModel, depolarizing_error
 import time
 from qiskit import QuantumCircuit
 from numpy import genfromtxt
-from bitstring import Bits
-
+from qiskit_aer import AerError
 
 def ZeroAncCRn(circuit, control, target, theta):
     circuit.p(theta/2, control)
@@ -235,4 +234,26 @@ def simulate(qc, shots=1024):
     for outcome, count in counts.items():
         print("{}: {}%".format(outcome, count / sum(counts.values()) * 100))
 
+def simulateGPU(qc, shots=1024):
+    try:
+        simulator = Aer.get_backend('aer_simulator')
+        simulator.set_options(device='GPU')
+    except AerError as e:
+        print(e)
+    job_sim = simulator.run(qk.transpile(qc, simulator), shots=shots)
+    result_sim = job_sim.result()
+    counts = result_sim.get_counts(qc)
 
+    counts = convertKeys(counts)
+    for outcome, count in counts.items():
+        print("{}: {}%".format(outcome, count / sum(counts.values()) * 100))
+
+
+def drawDecomposed(qc, n, reversed=False, reps=4, fold=80):
+    decomposed = qc.decompose(reps=reps)
+    print("operation count: {}".format(sum(dict(decomposed.count_ops()).values())))
+    print("operations: {}".format(dict(decomposed.count_ops())))
+
+    return(decomposed.draw(output="mpl", fold=fold,
+                    filename="circuits/{}-bitAdderDecomposed{}.png".format(n,
+                    "Reversed" if reversed == True else "")))
