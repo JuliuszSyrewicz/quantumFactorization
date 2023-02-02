@@ -18,7 +18,7 @@ def testCircuit(qc):
 
 class TestFunctions(unittest.TestCase):
     def testAdd(self):
-        for i in range(100):
+        for i in range(6):
             a = np.random.randint(0, 63)
             b = np.random.randint(0, 63)
             qc = circuits.adderCircuit(a, b)

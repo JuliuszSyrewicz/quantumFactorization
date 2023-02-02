@@ -224,3 +224,15 @@ def plotShor(no_qubits, len_exp, counts, g, N):
     filename = "charts/factored{}".format(N)
     plt.show()
     plt.savefig(filename)
+
+def simulate(qc, shots=1024):
+    simulator = Aer.get_backend('qasm_simulator')
+    job_sim = simulator.run(qk.transpile(qc, simulator), shots=shots)
+    result_sim = job_sim.result()
+    counts = result_sim.get_counts(qc)
+
+    counts = convertKeys(counts)
+    for outcome, count in counts.items():
+        print("{}: {}%".format(outcome, count / sum(counts.values()) * 100))
+
+

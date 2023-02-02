@@ -41,6 +41,49 @@ def adderCircuit(a, b, reverse=False):
 
     return qc
 
+def fourierSpaceAdderCircuit(a, b, delta, reverse=False):
+    """
+    Circuit for the addition of a and b in the Fourier space
+    design from Beauregard, Stephane. Circuit for Shor’s Algorithm Using 2n+3 Qubits.
+    arXiv:quant-ph/0205095, arXiv, 21 Feb. 2003. arXiv.org, http://arxiv.org/abs/quant-ph/0205095.
+    :param a: first addend
+    :param b: second addend
+    :return: quantum circuit for the addition of a and b
+    """
+
+    n = len(bin(max(a, b))[2:])
+
+    # create registers\
+    reg_control = QuantumRegister(2, name="control")
+    reg_b = QuantumRegister(n, name="b")
+    reg_phi = QuantumRegister(n, name="phi")
+    cr = ClassicalRegister(n, name="output")
+
+    # create circuit
+    qc = QuantumCircuit(reg_control, reg_b, reg_phi, cr, name="{}-bit adder".format(n))
+
+    qc.x(reg_control[0])
+    qc.x(reg_control[1])
+    # handle cases where a or b is 0 with a try except block
+    try:
+        qc.x(reg_b[i] for i in functions.getOneIndices(b))
+    except CircuitError:
+        pass
+    try:
+        qc.x(reg_phi[i] for i in functions.getOneIndices(a))
+    except CircuitError:
+        pass
+
+
+
+    # adder
+    qc.append(arithmetic.nbitCtrlAdditionTransform(n, reg_control, reg_b, reg_phi, reversed=reverse, delta=delta), reg_control[:] + reg_b[:] + reg_phi[:])
+
+    qc.barrier()
+    qc.measure(reg_b, cr)
+
+    return qc
+
 def modNAdderCircuit(a, b, N, reverse=False):
     """
     :param a: first addend

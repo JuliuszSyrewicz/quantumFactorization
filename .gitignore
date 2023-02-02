@@ -9,3 +9,10 @@ __pycache__/
 /.idea/inspectionProfiles/
 *.xml
 *.iml
+
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# IPython
+profile_default/
+ipython_config.py
