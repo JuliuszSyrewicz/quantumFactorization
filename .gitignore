@@ -9,6 +9,9 @@ __pycache__/
 qasm_files/
 txt/
 
+.*
+!/.gitignore
+
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
 
