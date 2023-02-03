@@ -1,7 +1,3 @@
-charts/
-circuits/
-qasm_files/
-txt/
 __pycache__/
 .idea
 .idea/
@@ -9,6 +5,9 @@ __pycache__/
 /.idea/inspectionProfiles/
 *.xml
 *.iml
+*.png
+qasm_files/
+txt/
 
 .ipynb_checkpoints
 */.ipynb_checkpoints/*

@@ -11,6 +11,9 @@ import time
 from qiskit import QuantumCircuit
 from numpy import genfromtxt
 from qiskit_aer import AerError
+from qiskit import *
+from qiskit.circuit.library import *
+from qiskit.providers.aer import *
 
 def ZeroAncCRn(circuit, control, target, theta):
     circuit.p(theta/2, control)
@@ -235,18 +238,19 @@ def simulate(qc, shots=1024):
         print("{}: {}%".format(outcome, count / sum(counts.values()) * 100))
 
 def simulateGPU(qc, shots=1024):
-    try:
-        simulator = Aer.get_backend('aer_simulator')
-        simulator.set_options(device='GPU')
-    except AerError as e:
-        print(e)
-    job_sim = simulator.run(qk.transpile(qc, simulator), shots=shots)
-    result_sim = job_sim.result()
-    counts = result_sim.get_counts(qc)
 
-    counts = convertKeys(counts)
-    for outcome, count in counts.items():
-        print("{}: {}%".format(outcome, count / sum(counts.values()) * 100))
+    sim = AerSimulator(method='statevector', device='GPU', cuStateVec_enable=True)
+    qc = transpile(qc, sim)
+    result = sim.run(qc, shots=shots, seed_simulator=12345).result()
+
+    counts = result.get_counts(qc)
+
+    metadata = result.to_dict()['results'][0]['metadata']
+    if 'cuStateVec_enable' in metadata and metadata['cuStateVec_enable']:
+        print("cuStateVector is used for the simulation")
+    print("{0} qubits, Time = {1} sec".format('n', result.to_dict()['results'][0]['time_taken']))
+    counts = result.get_counts()
+    print(counts)
 
 
 def drawDecomposed(qc, n, reversed=False, reps=4, fold=80):
