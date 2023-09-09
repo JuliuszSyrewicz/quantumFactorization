@@ -1,9 +1,12 @@
 from qiskit import QuantumRegister, QuantumCircuit, ClassicalRegister
 from qiskit.circuit.exceptions import CircuitError
 import importlib
-import functions, arithmetic
+import functions
+import arithmetic
+
 importlib.reload(functions)
 importlib.reload(arithmetic)
+
 
 def adderCircuit(a, b, reverse=False):
     """
@@ -21,7 +24,9 @@ def adderCircuit(a, b, reverse=False):
     cr = ClassicalRegister(n + 1, name="c")
 
     # create circuit
-    qc = QuantumCircuit(reg_a, reg_b, reg_anc, reg_control, cr, name="{}-bit adder".format(n))
+    qc = QuantumCircuit(
+        reg_a, reg_b, reg_anc, reg_control, cr, name="{}-bit adder".format(n)
+    )
 
     # handle cases where a or b is 0 with a try except block
     try:
@@ -34,12 +39,16 @@ def adderCircuit(a, b, reverse=False):
         pass
 
     # adder
-    qc.append(arithmetic.nBitAdder(n, reg_a, reg_b, reg_anc, reverse=reverse), reg_a[:] + reg_b[:] + reg_anc[:])
+    qc.append(
+        arithmetic.nBitAdder(n, reg_a, reg_b, reg_anc, reverse=reverse),
+        reg_a[:] + reg_b[:] + reg_anc[:],
+    )
 
     qc.barrier()
     qc.measure(reg_b, cr)
 
     return qc
+
 
 def fourierSpaceAdderCircuit(a, b, delta, reverse=False):
     """
@@ -74,15 +83,19 @@ def fourierSpaceAdderCircuit(a, b, delta, reverse=False):
     except CircuitError:
         pass
 
-
-
     # adder
-    qc.append(arithmetic.nbitCtrlAdditionTransform(n, reg_control, reg_b, reg_phi, reversed=reverse, delta=delta), reg_control[:] + reg_b[:] + reg_phi[:])
+    qc.append(
+        arithmetic.nbitCtrlAdditionTransform(
+            n, reg_control, reg_b, reg_phi, reversed=reverse, delta=delta
+        ),
+        reg_control[:] + reg_b[:] + reg_phi[:],
+    )
 
     qc.barrier()
     qc.measure(reg_b, cr)
 
     return qc
+
 
 def modNAdderCircuit(a, b, N, reverse=False):
     """
@@ -118,8 +131,12 @@ def modNAdderCircuit(a, b, N, reverse=False):
     except CircuitError:
         pass
 
-    qc.append(arithmetic.nbitModNAdder(n, N, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=reverse),
-              reg_a[:] + reg_b[:] + reg_anc[:] + reg_N[:] + reg_tmp_qubit[:])
+    qc.append(
+        arithmetic.nbitModNAdder(
+            n, N, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=reverse
+        ),
+        reg_a[:] + reg_b[:] + reg_anc[:] + reg_N[:] + reg_tmp_qubit[:],
+    )
 
     # revert N to zeros
     try:
@@ -131,6 +148,7 @@ def modNAdderCircuit(a, b, N, reverse=False):
     qc.measure(reg_b[:n], cr)
 
     return qc
+
 
 def modNMultiplierCircuit(x, g, N, reverse=False):
     """
@@ -152,7 +170,9 @@ def modNMultiplierCircuit(x, g, N, reverse=False):
     cr = ClassicalRegister(n, name="output")
 
     # create circuit
-    qc = QuantumCircuit(reg_c_qubit, reg_x, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, cr)
+    qc = QuantumCircuit(
+        reg_c_qubit, reg_x, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, cr
+    )
 
     # set control to 1
     qc.x(reg_c_qubit[0])
@@ -168,9 +188,28 @@ def modNMultiplierCircuit(x, g, N, reverse=False):
     except CircuitError:
         pass
 
-    qc.append(arithmetic.nbitModNMultiplier
-              (n, g, N, reg_c_qubit, reg_x, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, reverse=reverse),
-              reg_c_qubit[:] + reg_x[:] + reg_a[:] + reg_b[:] + reg_anc[:] + reg_N[:] + reg_tmp_qubit[:])
+    qc.append(
+        arithmetic.nbitModNMultiplier(
+            n,
+            g,
+            N,
+            reg_c_qubit,
+            reg_x,
+            reg_a,
+            reg_b,
+            reg_anc,
+            reg_N,
+            reg_tmp_qubit,
+            reverse=reverse,
+        ),
+        reg_c_qubit[:]
+        + reg_x[:]
+        + reg_a[:]
+        + reg_b[:]
+        + reg_anc[:]
+        + reg_N[:]
+        + reg_tmp_qubit[:],
+    )
 
     # revert N to zeros
     try:

@@ -1,4 +1,5 @@
 __pycache__/
+.ruff_cache
 .idea
 .idea/
 /.idea/
@@ -9,8 +10,12 @@ __pycache__/
 qasm_files/
 txt/
 
-.*
+
 !/.gitignore
+
+venv/
+.venv/
+*.env
 
 .ipynb_checkpoints
 */.ipynb_checkpoints/*

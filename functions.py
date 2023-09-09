@@ -1,6 +1,5 @@
-import sys
 import numpy as np
-np.set_printoptions(suppress = True)
+
 import qiskit as qk
 from qiskit import Aer
 from qiskit.tools.visualization import plot_histogram
@@ -10,66 +9,87 @@ from qiskit_aer.noise import NoiseModel, depolarizing_error
 import time
 from qiskit import QuantumCircuit
 from numpy import genfromtxt
-from qiskit_aer import AerError
-from qiskit import *
-from qiskit.circuit.library import *
-from qiskit.providers.aer import *
+from qiskit import transpile
+
+# from qiskit.circuit.library import *
+# from qiskit.providers.aer import *
+
+np.set_printoptions(suppress=True)
+
 
 def ZeroAncCRn(circuit, control, target, theta):
-    circuit.p(theta/2, control)
-    circuit.p(theta/2, target)
+    circuit.p(theta / 2, control)
+    circuit.p(theta / 2, target)
     circuit.cnot(control, target)
-    circuit.p(-theta/2, target)
+    circuit.p(-theta / 2, target)
     circuit.cnot(control, target)
 
+
 def swap_registers(circuit, n):
-    for qubit in range(n//2):
-        circuit.swap(qubit, n-qubit-1)
+    for qubit in range(n // 2):
+        circuit.swap(qubit, n - qubit - 1)
     return circuit
+
 
 def AFTerror(qc2, n, qft_probs, delta, backend="statevector", display_bool=False):
     # returns a correlation coefficient between the qft and aft signals
-    aft_probs = simulateQFT(qc2, n, display_bool=display_bool, delta=delta, backend=backend)
+    aft_probs = simulateQFT(
+        qc2, n, display_bool=display_bool, delta=delta, backend=backend
+    )
     mae = np.abs(np.subtract(qft_probs, aft_probs)).mean()
     return mae
+
 
 def compareAFT(n, max_delta, qft_counts, display_bool=False, backend="statevector"):
     errors = []
     deltas = []
     for d in range(1, max_delta, 1):
         deltas.append(d)
-        print("progress: {:.2f}%".format(d/n*100))
+        print("progress: {:.2f}%".format(d / n * 100))
         qcAFT = QuantumCircuit(n, n)
-        qcAFT.h(n//2)
+        qcAFT.h(n // 2)
         QFT(qcAFT, n, delta=d)
-        errors.append(AFTerror(qcAFT, n, qft_counts, d, backend=backend, display_bool=display_bool))
+        errors.append(
+            AFTerror(
+                qcAFT, n, qft_counts, d, backend=backend, display_bool=display_bool
+            )
+        )
 
     assert len(deltas) == len(errors)
     return deltas, errors
 
+
 def QFT(circuit, n, delta=10000):
     """
-        adds a quantum fourier transform to a specified circuit
-        n = number of qubits to perform the operation on
-        delta = exponent cutoff for phase shift precision
+    adds a quantum fourier transform to a specified circuit
+    n = number of qubits to perform the operation on
+    delta = exponent cutoff for phase shift precision
     """
     swap_registers(circuit, n)
     for i in range(n):
         circuit.h(i)
-        for j in range(1, n-i):
+        for j in range(1, n - i):
             if j < delta:
-                ZeroAncCRn(circuit, i+j, i, np.pi/2**(j))
+                ZeroAncCRn(circuit, i + j, i, np.pi / 2 ** (j))
             else:
                 break
 
-def simulateQFT(qc, n, reps=2 ** 14, display_bool=False, delta=10000, backend="statevector",
-                noise = 0.01):
+
+def simulateQFT(
+    qc,
+    n,
+    reps=2**14,
+    display_bool=False,
+    delta=10000,
+    backend="statevector",
+    noise=0.01,
+):
     # Create an empty noise model
     noise_model = NoiseModel()
 
     # Add depolarizing error to all single qubit u1, u2, u3 gates
     error = depolarizing_error(noise, 1)
-    noise_model.add_all_qubit_quantum_error(error, ['h', 't', 'cnot', 'tdg', 'p'])
+    noise_model.add_all_qubit_quantum_error(error, ["h", "t", "cnot", "tdg", "p"])
 
     # Print noise model info
     # print(noise_model)
@@ -80,35 +100,50 @@ def simulateQFT(qc, n, reps=2 ** 14, display_bool=False, delta=10000, backend="s
         simulator = AerSimulator(noise_model=noise_model)
         job_sim = simulator.run(qk.transpile(qc, simulator), shots=reps)
         result_sim = job_sim.result()
-        counts = (result_sim.get_counts(qc))
+        counts = result_sim.get_counts(qc)
         if display_bool:
             # choose appropriate filename
-            filename = "charts/n={},delta={},noise={}.png".format(n, delta if delta < 9000 else "infinite", noise)
-            plot_histogram(counts, legend=[], bar_labels=False, title="n={}, delta={}".format(n, delta if delta < 9000 else "infinite"), filename=filename)
-            hist = plot_histogram(counts, legend=[], bar_labels=False, title="n={}, delta={}".format(n, delta if delta < 9000 else "infinite"))
+            filename = "charts/n={},delta={},noise={}.png".format(
+                n, delta if delta < 9000 else "infinite", noise
+            )
+            plot_histogram(
+                counts,
+                legend=[],
+                bar_labels=False,
+                title="n={}, delta={}".format(n, delta if delta < 9000 else "infinite"),
+                filename=filename,
+            )
+            plot_histogram(
+                counts,
+                legend=[],
+                bar_labels=False,
+                title="n={}, delta={}".format(n, delta if delta < 9000 else "infinite"),
+            )
         return counts
-
 
     elif backend == "statevector":
         # qc.measure(range(n), range(n))
-        backend = Aer.get_backend('statevector_simulator') # the device to run on
+        backend = Aer.get_backend("statevector_simulator")  # the device to run on
         result = backend.run(qk.transpile(qc, backend)).result()
-        psi  = result.get_statevector(qc)
+        psi = result.get_statevector(qc)
 
         probs = psi.probabilities()
         if display_bool:
-            filename = "charts/probabilities,n={},delta={}.png".format(n, delta if delta < 9000 else "infinite")
+            filename = "charts/probabilities,n={},delta={}.png".format(
+                n, delta if delta < 9000 else "infinite"
+            )
             plt.bar([x for x in range(2**n)], probs, color="#c888e3")
             plt.title("n={}, delta={}".format(n, delta if delta < 9000 else "infinite"))
             plt.show()
             plt.savefig(filename)
-        return probs[:2**n]
+        return probs[: 2**n]
+
 
 def compareFTs(n_low, n_high, backend="statevector", display_bool=False):
 
-    filename = 'errors{}-{}.txt'.format(n_low, n_high)
+    filename = "errors{}-{}.txt".format(n_low, n_high)
     print(filename)
-    f = open('txt/{}'.format(filename), 'w')
+    f = open("txt/{}".format(filename), "w")
     f.write("n, delta, error\n")
 
     i = 0
@@ -119,18 +154,21 @@ def compareFTs(n_low, n_high, backend="statevector", display_bool=False):
         QFT(qcQFT, n)
         qft_probs = simulateQFT(qcQFT, n, display_bool=display_bool, backend=backend)
         start_time = time.time()
-        deltas, errors = compareAFT(n, n, qft_probs, backend=backend, display_bool=display_bool)
+        deltas, errors = compareAFT(
+            n, n, qft_probs, backend=backend, display_bool=display_bool
+        )
         print("--- {:.3f}s seconds ---".format(time.time() - start_time))
         for d in range(len(deltas)):
-            f = open('txt/{}'.format(filename), 'a')
+            f = open("txt/{}".format(filename), "a")
             f.write("{}, {}, {}\n".format(n, deltas[d], errors[d]))
             f.close()
-        i -= - 1
+        i -= -1
 
     f.close()
 
+
 def plotErrorsFromFile(filepath):
-    my_data = genfromtxt(filepath, delimiter=',')
+    my_data = genfromtxt(filepath, delimiter=",")
     my_data = my_data[1:, :]
 
     max_n = np.max(my_data[:, 0]).astype(int) + 1
@@ -138,7 +176,11 @@ def plotErrorsFromFile(filepath):
     min_n = np.min(my_data[:, 0]).astype(int)
     min_d = np.min(my_data[:, 1]).astype(int)
 
-    print("min_n = {}, max_n = {}, min_d = {}, max_d = {}".format(min_n, max_n, min_d, max_d))
+    print(
+        "min_n = {}, max_n = {}, min_d = {}, max_d = {}".format(
+            min_n, max_n, min_d, max_d
+        )
+    )
     errors = np.zeros((max_n, max_d))  # + sys.float_info.min
     print(errors.shape)
 
@@ -162,6 +204,7 @@ def plotErrorsFromFile(filepath):
 
     plt.colorbar()
 
+
 def getOneIndices(n):
     # convert integer to binary string
     binary_str = bin(n)[2:][::-1]
@@ -171,10 +214,11 @@ def getOneIndices(n):
 
     # iterate through the binary string and get the indices where the string is equal to 1
     for i in range(len(binary_str)):
-        if binary_str[i] == '1':
+        if binary_str[i] == "1":
             indices.append(i)
 
     return indices
+
 
 # convert output dict's keys to integer and print out
 def convertKeys(dict, reverse=False):
@@ -183,32 +227,35 @@ def convertKeys(dict, reverse=False):
 
     return output
 
+
 def squashDict(dict):
-    assert(len(dict)) == 1
+    assert (len(dict)) == 1
     outcome = list(dict.keys())[0]
     return outcome
+
 
 def genBinStrings(n):
     binstrings = []
 
-    def genBin(n, bs=''):
+    def genBin(n, bs=""):
         if len(bs) == n:
             binstrings.append(bs)
         else:
-            genBin(n, bs + '0')
-            genBin(n, bs + '1')
+            genBin(n, bs + "0")
+            genBin(n, bs + "1")
 
     genBin(n)
     return binstrings
+
 
 def plotShor(no_qubits, len_exp, counts, g, N):
 
     # for key in counts:
     #     b_reg = key[(-len_exp-1):(-1)]
-        # print("b_reg = {}, int = {}".format(b_reg, int(b_reg, 2)))
+    # print("b_reg = {}, int = {}".format(b_reg, int(b_reg, 2)))
 
     for binstring in genBinStrings(len_exp):
-        padded = '0' * (no_qubits - len_exp) + binstring
+        padded = "0" * (no_qubits - len_exp) + binstring
         print(padded)
         counts[padded] = counts.get(padded, 0)
 
@@ -227,8 +274,9 @@ def plotShor(no_qubits, len_exp, counts, g, N):
     plt.show()
     plt.savefig(filename)
 
+
 def simulate(qc, shots=1024):
-    simulator = Aer.get_backend('qasm_simulator')
+    simulator = Aer.get_backend("qasm_simulator")
     job_sim = simulator.run(qk.transpile(qc, simulator), shots=shots)
     result_sim = job_sim.result()
     counts = result_sim.get_counts(qc)
@@ -237,18 +285,23 @@ def simulate(qc, shots=1024):
     for outcome, count in counts.items():
         print("{}: {}%".format(outcome, count / sum(counts.values()) * 100))
 
+
 def simulateGPU(qc, shots=1024):
 
-    sim = AerSimulator(method='statevector', device='GPU', cuStateVec_enable=True)
+    sim = AerSimulator(method="statevector", device="GPU", cuStateVec_enable=True)
     qc = transpile(qc, sim)
     result = sim.run(qc, shots=shots, seed_simulator=12345).result()
 
     counts = result.get_counts(qc)
 
-    metadata = result.to_dict()['results'][0]['metadata']
-    if 'cuStateVec_enable' in metadata and metadata['cuStateVec_enable']:
+    metadata = result.to_dict()["results"][0]["metadata"]
+    if "cuStateVec_enable" in metadata and metadata["cuStateVec_enable"]:
         print("cuStateVector is used for the simulation")
-    print("{0} qubits, Time = {1} sec".format('n', result.to_dict()['results'][0]['time_taken']))
+    print(
+        "{0} qubits, Time = {1} sec".format(
+            "n", result.to_dict()["results"][0]["time_taken"]
+        )
+    )
     counts = result.get_counts()
     print(counts)
 
@@ -258,6 +311,10 @@ def drawDecomposed(qc, n, reversed=False, reps=4, fold=80):
     print("operation count: {}".format(sum(dict(decomposed.count_ops()).values())))
     print("operations: {}".format(dict(decomposed.count_ops())))
 
-    return(decomposed.draw(output="mpl", fold=fold,
-                    filename="circuits/{}-bitAdderDecomposed{}.png".format(n,
-                    "Reversed" if reversed == True else "")))
+    return decomposed.draw(
+        output="mpl",
+        fold=fold,
+        filename="circuits/{}-bitAdderDecomposed{}.png".format(
+            n, "Reversed" if reversed is True else ""
+        ),
+    )

@@ -1,34 +1,39 @@
-import unittest, importlib
+import unittest
+import importlib
 import qiskit as qk
 from bitstring import Bits
 from qiskit_aer import Aer
 import numpy as np
 
-import functions, circuits
+import functions
+import circuits
+
 importlib.reload(functions)
 importlib.reload(circuits)
 
+
 def testCircuit(qc):
-    simulator = Aer.get_backend('qasm_simulator')
+    simulator = Aer.get_backend("qasm_simulator")
     job_sim = simulator.run(qk.transpile(qc, simulator), shots=1024)
     result_sim = job_sim.result()
     counts = functions.convertKeys(result_sim.get_counts(qc))
     counts = functions.squashDict(counts)
     return counts
 
+
 class TestFunctions(unittest.TestCase):
     def testAdd(self):
-        for i in range(6):
+        for _ in range(6):
             a = np.random.randint(0, 63)
             b = np.random.randint(0, 63)
             qc = circuits.adderCircuit(a, b)
             counts = testCircuit(qc)
-            if type(counts) != int:
+            if isinstance(counts, int):
                 self.fail("Adder circuit output gives multiple results")
             self.assertEqual(counts, a + b)
 
     def testSubtract(self):
-        for i in range(100):
+        for _ in range(100):
             a = np.random.randint(0, 63)
             b = np.random.randint(0, 63)
             qc = circuits.adderCircuit(a, b, reverse=True)
@@ -40,7 +45,8 @@ class TestFunctions(unittest.TestCase):
                 counts = Bits(bin(counts)).int
 
             print("a = {}, b = {}, b-a = {}, counts = {}".format(a, b, b - a, counts))
-            if type(counts) != int:
+
+            if isinstance(counts, int):
                 self.fail("Subtract circuit output gives multiple results")
             self.assertEqual(counts, b - a)
 
@@ -53,9 +59,13 @@ class TestFunctions(unittest.TestCase):
             qc = circuits.modNAdderCircuit(a, b, N)
 
             counts = testCircuit(qc)
-            print("a = {}, b = {}, N = {}, (a+b) % N = {}, counts = {}".format(a, b, N, (a+b)%N, counts))
+            print(
+                "a = {}, b = {}, N = {}, (a+b) % N = {}, counts = {}".format(
+                    a, b, N, (a + b) % N, counts
+                )
+            )
 
-            if type(counts) != int:
+            if isinstance(counts, int):
                 self.fail("Mod adder circuit output gives multiple results")
             self.assertEqual(counts, (a + b) % N)
 
@@ -68,8 +78,12 @@ class TestFunctions(unittest.TestCase):
             qc = circuits.modNMultiplierCircuit(a, b, N)
 
             counts = testCircuit(qc)
-            print("a = {}, b = {}, N = {}, (a*b) % N = {}, counts = {}".format(a, b, N, (a*b)%N, counts))
+            print(
+                "a = {}, b = {}, N = {}, (a*b) % N = {}, counts = {}".format(
+                    a, b, N, (a * b) % N, counts
+                )
+            )
 
-            if type(counts) != int:
+            if isinstance(counts, int):
                 self.fail("Mod multiplier circuit output gives multiple results")
             self.assertEqual(counts, (a * b) % N)

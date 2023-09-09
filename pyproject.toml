@@ -1,0 +1,3 @@
+[tool.ruff]
+# Skip unused variable rules (`F841`).
+ignore = ["E501", "E722"]
