@@ -346,7 +346,7 @@ def nbitModExponentiation(
 
     for i in range(n):
         qc.barrier()
-        # every succesive gate should perform the multiplication with respect to the remainders of higher powers mo
+        # every succesive gate should perform the multiplication with respect to the remainders of higher powers mod N
         g = g ** (2**i) % N
         qc.cnot(reg_exp[i], reg_c_qubit[0])
         qc.append(

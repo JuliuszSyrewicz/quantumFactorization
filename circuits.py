@@ -62,7 +62,7 @@ def fourierSpaceAdderCircuit(a, b, delta, reverse=False):
 
     n = len(bin(max(a, b))[2:])
 
-    # create registers\
+    # create registers
     reg_control = QuantumRegister(2, name="control")
     reg_b = QuantumRegister(n, name="b")
     reg_phi = QuantumRegister(n, name="phi")
@@ -219,5 +219,65 @@ def modNMultiplierCircuit(x, g, N, reverse=False):
 
     qc.barrier()
     qc.measure(reg_b[:n], cr)
+
+    return qc
+
+
+def shorCircuit(n, g, N):
+    len_exp = n
+    no_qubits = len_exp + 5 * n + 3
+
+    reg_exp = QuantumRegister(len_exp, name="reg_exp")
+    reg_c_qubit = QuantumRegister(1, name="reg_control")
+    reg_x = QuantumRegister(n, name="reg_x")
+    reg_a = QuantumRegister(n, name="reg_a")
+    reg_b = QuantumRegister(n + 1, name="reg_b")
+    reg_anc = QuantumRegister(n, name="reg_anc")
+    reg_N = QuantumRegister(n, name="reg_modN")
+    reg_tmp_qubit = QuantumRegister(1, name="reg_tmp_qubit")
+    cr = ClassicalRegister(no_qubits, name="reg_output")
+
+    qc = QuantumCircuit(
+        reg_exp, reg_c_qubit, reg_x, reg_a, reg_b, reg_anc, reg_N, reg_tmp_qubit, cr
+    )
+
+    # initialize exponent register to hadamard state
+    qc.h(reg_exp[0:len_exp])
+
+    # set the x register to 1 (input of first multiplier)
+    qc.x(reg_x[0])
+
+    try:
+        qc.x(reg_N[i] for i in functions.getOneIndices(N))
+    except CircuitError:
+        pass
+
+    qc.append(
+        arithmetic.nbitModExponentiation(
+            n,
+            g,
+            N,
+            reg_exp,
+            reg_c_qubit,
+            reg_x,
+            reg_a,
+            reg_b,
+            reg_anc,
+            reg_N,
+            reg_tmp_qubit,
+        ),
+        reg_exp[0:len_exp]
+        + reg_c_qubit[0:1]
+        + reg_x[0:n]
+        + reg_a[0:n]
+        + reg_b[0 : n + 1]
+        + reg_anc[0:n]
+        + reg_N[0:n]
+        + reg_tmp_qubit[0:1],
+    )
+
+    qc.append(arithmetic.nbitQFT(len_exp, reg_exp, reversed=True), reg_exp[0:len_exp])
+
+    qc.measure(reg_exp[0:len_exp], cr[0:len_exp])
 
     return qc

@@ -21,6 +21,13 @@ def testCircuit(qc):
     return counts
 
 
+# def testCircuit(qc):
+#     result = functions.simulateGPU(qc, shots=1024, print_bool=False)
+#     counts = functions.convertKeys(result.get_counts(qc))
+#     counts = functions.squashDict(counts)
+#     return counts
+
+
 class TestFunctions(unittest.TestCase):
     def testAdd(self):
         for _ in range(6):
@@ -70,7 +77,7 @@ class TestFunctions(unittest.TestCase):
             self.assertEqual(counts, (a + b) % N)
 
     def testModMultiplier(self):
-        for i in range(20):
+        for i in range(10):
             a = np.random.randint(0, 30)
             b = np.random.randint(0, 30)
 

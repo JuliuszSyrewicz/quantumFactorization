@@ -11,9 +11,6 @@ from qiskit import QuantumCircuit
 from numpy import genfromtxt
 from qiskit import transpile
 
-# from qiskit.circuit.library import *
-# from qiskit.providers.aer import *
-
 np.set_printoptions(suppress=True)
 
 
@@ -248,7 +245,7 @@ def genBinStrings(n):
     return binstrings
 
 
-def plotShor(no_qubits, len_exp, counts, g, N):
+def plotCounts(no_qubits, len_exp, counts, g, N):
 
     # for key in counts:
     #     b_reg = key[(-len_exp-1):(-1)]
@@ -275,35 +272,44 @@ def plotShor(no_qubits, len_exp, counts, g, N):
     plt.savefig(filename)
 
 
-def simulate(qc, shots=1024):
+def simulate(qc, shots=1024, print_bool=True):
     simulator = Aer.get_backend("qasm_simulator")
     job_sim = simulator.run(qk.transpile(qc, simulator), shots=shots)
     result_sim = job_sim.result()
     counts = result_sim.get_counts(qc)
 
     counts = convertKeys(counts)
-    for outcome, count in counts.items():
-        print("{}: {}%".format(outcome, count / sum(counts.values()) * 100))
+    if print_bool:
+        for outcome, count in counts.items():
+            print("{}: {}%".format(outcome, count / sum(counts.values()) * 100))
+            print("Time taken: {} sec".format(result_sim.time_taken))
 
 
-def simulateGPU(qc, shots=1024):
+def simulateGPU(qc, shots=1024, print_bool=True):
 
     sim = AerSimulator(method="statevector", device="GPU", cuStateVec_enable=True)
     qc = transpile(qc, sim)
     result = sim.run(qc, shots=shots, seed_simulator=12345).result()
 
-    counts = result.get_counts(qc)
-
-    metadata = result.to_dict()["results"][0]["metadata"]
-    if "cuStateVec_enable" in metadata and metadata["cuStateVec_enable"]:
-        print("cuStateVector is used for the simulation")
-    print(
-        "{0} qubits, Time = {1} sec".format(
-            "n", result.to_dict()["results"][0]["time_taken"]
-        )
-    )
     counts = result.get_counts()
-    print(counts)
+    counts = convertKeys(counts)
+
+    if print_bool:
+        metadata = result.to_dict()["results"][0]["metadata"]
+        if "cuStateVec_enable" in metadata and metadata["cuStateVec_enable"]:
+            print("cuStateVector is used for the simulation")
+        print(
+            "{0} qubits, Time = {1} sec".format(
+                "n", result.to_dict()["results"][0]["time_taken"]
+            )
+        )
+
+        for outcome, count in counts.items():
+            print("{}: {}%".format(outcome, count / sum(counts.values()) * 100))
+
+        print(counts)
+
+    return result
 
 
 def drawDecomposed(qc, n, reversed=False, reps=4, fold=80):
