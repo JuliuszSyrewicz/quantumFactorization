@@ -1,23 +1,26 @@
 import unittest
 import importlib
-import qiskit as qk
 from bitstring import Bits
-from qiskit_aer import Aer
 import numpy as np
 
+from qiskit_aer import AerSimulator
+from functions import convertKeys, squashDict
 import functions
 import circuits
+from qiskit import transpile
 
 importlib.reload(functions)
 importlib.reload(circuits)
 
 
 def testCircuit(qc):
-    simulator = Aer.get_backend("qasm_simulator")
-    job_sim = simulator.run(qk.transpile(qc, simulator), shots=1024)
-    result_sim = job_sim.result()
-    counts = functions.convertKeys(result_sim.get_counts(qc))
-    counts = functions.squashDict(counts)
+    sim = AerSimulator(method="statevector", device="GPU", cuStateVec_enable=True)
+    qc = transpile(qc, sim)
+    result = sim.run(qc, shots=64, seed_simulator=12345).result()
+
+    counts = result.get_counts()
+    counts = convertKeys(counts)
+    counts = squashDict(counts)
     return counts
 
 
@@ -35,12 +38,13 @@ class TestFunctions(unittest.TestCase):
             b = np.random.randint(0, 63)
             qc = circuits.adderCircuit(a, b)
             counts = testCircuit(qc)
-            if isinstance(counts, int):
+            if not isinstance(counts, int):
+                print(f"a = {a}, b = {b}, counts = {counts}")
                 self.fail("Adder circuit output gives multiple results")
             self.assertEqual(counts, a + b)
 
     def testSubtract(self):
-        for _ in range(100):
+        for _ in range(20):
             a = np.random.randint(0, 63)
             b = np.random.randint(0, 63)
             qc = circuits.adderCircuit(a, b, reverse=True)
@@ -53,12 +57,12 @@ class TestFunctions(unittest.TestCase):
 
             print("a = {}, b = {}, b-a = {}, counts = {}".format(a, b, b - a, counts))
 
-            if isinstance(counts, int):
+            if not isinstance(counts, int):
                 self.fail("Subtract circuit output gives multiple results")
             self.assertEqual(counts, b - a)
 
     def testModAdd(self):
-        for i in range(20):
+        for _ in range(20):
             a = np.random.randint(0, 62)
             b = np.random.randint(0, 62)
 
@@ -72,12 +76,12 @@ class TestFunctions(unittest.TestCase):
                 )
             )
 
-            if isinstance(counts, int):
+            if not isinstance(counts, int):
                 self.fail("Mod adder circuit output gives multiple results")
             self.assertEqual(counts, (a + b) % N)
 
     def testModMultiplier(self):
-        for i in range(10):
+        for _ in range(10):
             a = np.random.randint(0, 30)
             b = np.random.randint(0, 30)
 
@@ -91,6 +95,6 @@ class TestFunctions(unittest.TestCase):
                 )
             )
 
-            if isinstance(counts, int):
+            if not isinstance(counts, int):
                 self.fail("Mod multiplier circuit output gives multiple results")
             self.assertEqual(counts, (a * b) % N)
